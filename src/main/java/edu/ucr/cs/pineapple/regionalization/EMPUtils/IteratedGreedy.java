@@ -141,6 +141,29 @@ public class IteratedGreedy {
             System.out.println(area + " " +neighborRegions);
         }
     }
+    public static List<Integer> pickBoundaryArea(int[] initLabels, Map<Integer, Region> initRegionList, SpatialGrid r){
+        List<Integer> boundaryAreas = new ArrayList<>();
+        for(Map.Entry<Integer, Region> e: initRegionList.entrySet()){
+            boundaryAreas.addAll(e.getValue().getBoundaryAreas(r, initLabels));
+        }
+        return boundaryAreas;
+    }
+    public static List<Integer> pickRemovableBoundaryArea(int[] initLabels, Map<Integer, Region> initRegionList, SpatialGrid r, ArrayList<Long> minAttr,
+                                                          ArrayList<Long> maxAttr,
+                                                          ArrayList<Long> avgAttr,
+                                                          ArrayList<Long> sumAttr){
+        List<Integer> boundaryAreas = new ArrayList<>();
+        for(Map.Entry<Integer, Region> e: initRegionList.entrySet()){
+            List<Integer> allBoundAreas = e.getValue().getBoundaryAreas(r, initLabels);
+            for (Integer a:  allBoundAreas){
+                if (e.getValue().removable(a, minAttr, maxAttr, avgAttr, sumAttr, r)){
+                    boundaryAreas.add(a);
+                }
+                }
+            }
+
+        return boundaryAreas;
+    }
     private static void DeconstructionBoundaryNode(int[] initLabels,
                                                List<Integer> indexList,
                                                Map<Integer, Region> initRegionList,
@@ -154,18 +177,27 @@ public class IteratedGreedy {
         int noOfAreas = initLabels.length;
         int[] labels = Arrays.copyOf(initLabels, initLabels.length);
         Map<Integer, Region> regionList = initRegionList;
-        int noOfPerturbAreas = (int) (perturbStrength * initLabels.length);
+        //int noOfPerturbAreas = (int) (perturbStrength * initLabels.length);
         //int[] array = new Random().ints(noOfPerturbAreas, 0, initLables.length).toArray()
-        Collections.shuffle(indexList);
-        List<Integer> randomIndices = indexList.subList(0, noOfPerturbAreas);
-        System.out.println(randomIndices);
-        List<Integer> potentialAreas = Tabu.pickMoveAreaNew(labels, regionList, r, distanceMatrix, minAttr, maxAttr, avgAttr, sumAttr);
-        System.out.println(potentialAreas.size());
-        System.out.println(randomIndices.size());
+        //Collections.shuffle(indexList);
+        //List<Integer> randomIndices = indexList.subList(0, noOfPerturbAreas);
+       // System.out.println(randomIndices);
+        //List<Integer> potentialAreas = Tabu.pickMoveAreaNew(labels, regionList, r, distanceMatrix, minAttr, maxAttr, avgAttr, sumAttr);
+        List<Integer> potentialAreas = pickBoundaryArea(labels, regionList, r);
+        List<Integer> potentialRemoveAbleAreas = pickRemovableBoundaryArea(labels, regionList, r, minAttr, maxAttr, avgAttr, sumAttr);
+        Collections.shuffle(potentialAreas);
+
+        int noOfPerturbAreas = (int) (perturbStrength * potentialAreas.size());
+        List<Integer> randomIndices = potentialAreas.subList(0, noOfPerturbAreas);
+
+        System.out.println("All boundary " + potentialAreas.size());
+        System.out.println("All removable boundary " + potentialRemoveAbleAreas.size());
+        //System.out.println(randomIndices.size());
         int maxRegionId = Collections.max(regionList.keySet());
 
         List<Integer> deconstructedAreas = new ArrayList<Integer>();
-        for (Integer index : potentialAreas){
+        //for (Integer index : potentialAreas){
+        for (Integer index : randomIndices){
             int regionId = labels[index];
             if (regionId <= 0)
                 continue;
@@ -209,11 +241,26 @@ public class IteratedGreedy {
                 }
             }
         }
+        //Reconstruction
+        List<Integer> infeasibleRegions = new ArrayList<>();
+        //System.out.println("No of regions: " + regionList.size());
+        int infeasibleRegionCount = 0;
+        for(Map.Entry<Integer, Region> entry: regionList.entrySet()){
+            if(!entry.getValue().satisfiable()){
+                infeasibleRegionCount += 1;
+                infeasibleRegions.add(entry.getKey());
+            }
+        }
+        for(Integer infRegion: infeasibleRegions){
 
+        }
+        for(Integer dArea: deconstructedAreas){
+
+        }
         if(debug){
-            List<Integer> infeasibleRegions = new ArrayList<>();
+            //List<Integer> infeasibleRegions = new ArrayList<>();
             System.out.println("No of regions: " + regionList.size());
-            int infeasibleRegionCount = 0;
+            //int infeasibleRegionCount = 0;
             for(Map.Entry<Integer, Region> entry: regionList.entrySet()){
                 if(!entry.getValue().satisfiable()){
                     infeasibleRegionCount += 1;

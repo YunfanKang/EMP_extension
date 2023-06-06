@@ -256,9 +256,13 @@ public class Region {
 
                 if(neighborFromAnotherR)
                     break;
-                if(labels[a] != -2 && labels[a] != labels[rla.get(pasi)]){
+                //if(labels[a] != -2 && labels[a] != labels[area])
+                if(labels[a] != labels[area]){
                     neighborFromAnotherR = true;
                 }
+            }
+            if(neighborFromAnotherR){
+                boundaryArea.add(area);
             }
         }
         return boundaryArea;
